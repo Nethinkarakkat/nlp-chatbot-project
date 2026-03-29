@@ -1,50 +1,42 @@
 import streamlit as st
-import nltk
-import numpy as np
-from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
-nltk.download('punkt')
-nltk.download('wordnet')
-
-lemmatizer = WordNetLemmatizer()
+# Load semantic model
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Knowledge base
-questions = [
-    "what is artificial intelligence",
-    "what is machine learning",
-    "what is natural language processing",
-    "what is chatbot",
-    "who created python",
-    "what is deep learning",
-    "what is data science"
-]
+knowledge_base = {
+    "what is artificial intelligence": "Artificial Intelligence enables machines to simulate human intelligence.",
+    "applications of artificial intelligence": "AI is used in healthcare, finance, robotics, recommendation systems, and self-driving cars.",
+    "advantages of artificial intelligence": "AI improves efficiency, automates repetitive tasks, and helps analyze large datasets.",
+    "disadvantages of artificial intelligence": "AI systems can be expensive, require large datasets, and may introduce bias.",
+    
+    "what is machine learning": "Machine learning is a subset of AI that allows systems to learn from data.",
+    "types of machine learning": "The main types are supervised learning, unsupervised learning, and reinforcement learning.",
+    
+    "what is deep learning": "Deep learning is a machine learning technique based on neural networks with multiple layers.",
+    
+    "what is natural language processing": "Natural Language Processing enables computers to understand human language.",
+    "applications of nlp": "NLP is used in chatbots, translation systems, sentiment analysis, and voice assistants.",
+    
+    "what is data science": "Data science focuses on extracting insights from data using statistics and machine learning.",
+    
+    "who created python": "Python was created by Guido van Rossum in 1991.",
+    
+    "what is a chatbot": "A chatbot is a program that simulates conversation with users using natural language."
+}
 
-answers = [
-    "Artificial Intelligence enables machines to simulate human intelligence.",
-    "Machine Learning is a subset of AI that allows systems to learn from data.",
-    "Natural Language Processing enables computers to understand human language.",
-    "A chatbot is a program that simulates conversation with users.",
-    "Python was created by Guido van Rossum.",
-    "Deep learning is a type of machine learning based on neural networks.",
-    "Data science involves extracting insights from data using algorithms and statistics."
-]
+questions = list(knowledge_base.keys())
+answers = list(knowledge_base.values())
 
-# Preprocess text
-def preprocess(text):
-    tokens = nltk.word_tokenize(text.lower())
-    tokens = [lemmatizer.lemmatize(word) for word in tokens]
-    return " ".join(tokens)
+# Convert questions to embeddings
+question_embeddings = model.encode(questions)
 
-processed_questions = [preprocess(q) for q in questions]
-
-vectorizer = TfidfVectorizer()
-X = vectorizer.fit_transform(processed_questions)
-
-# UI
-st.title("AI Chatbot")
-st.write("You can ask me questions about AI, Machine Learning, NLP, and Data Science.")
+# Streamlit UI
+st.title("AI Chatbot using NLP")
+st.write("Ask me questions about AI, Machine Learning, NLP, or Data Science.")
 
 # Chat history
 if "messages" not in st.session_state:
@@ -59,7 +51,8 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-user_input = st.chat_input("Type your message...")
+# User input
+user_input = st.chat_input("Type your message")
 
 if user_input:
 
@@ -70,46 +63,27 @@ if user_input:
 
     text = user_input.lower()
 
-    # Greeting
+    # Greeting detection
     if text in ["hi", "hello", "hey"]:
-        response = "Hello! 😊 Ask me anything about AI, Machine Learning, or NLP."
+        response = "Hello! 😊 Ask me anything about AI, Machine Learning, NLP, or Data Science."
 
-    # AI questions
-    elif "ai" in text or "artificial intelligence" in text:
-        response = "Artificial Intelligence enables machines to simulate human intelligence."
+    elif "thank" in text:
+        response = "You're welcome! Feel free to ask more questions."
 
-    # Machine learning
-    elif "machine learning" in text or "ml" in text:
-        response = "Machine Learning is a subset of AI that allows systems to learn from data."
-
-    # NLP
-    elif "nlp" in text or "natural language processing" in text:
-        response = "Natural Language Processing enables computers to understand human language."
-
-    # Chatbot
-    elif "chatbot" in text:
-        response = "A chatbot is a program that simulates conversation with users."
-
-    # Python
-    elif "python" in text:
-        response = "Python was created by Guido van Rossum."
-
-    # Thanks
-    elif "thanks" in text or "thank you" in text:
-        response = "You're welcome! 😊"
+    elif "bye" in text:
+        response = "Goodbye! Have a great day."
 
     else:
-        # fallback to similarity
-        processed_input = preprocess(user_input)
-        user_vector = vectorizer.transform([processed_input])
+        # Semantic similarity
+        user_embedding = model.encode([user_input])
+        similarity = cosine_similarity(user_embedding, question_embeddings)
 
-        similarity = cosine_similarity(user_vector, X)
-        index = np.argmax(similarity)
+        best_match = np.argmax(similarity)
 
-        if similarity[0][index] < 0.25:
+        if similarity[0][best_match] < 0.4:
             response = "I'm not sure about that. Try asking about AI, Machine Learning, NLP, or Data Science."
         else:
-            response = answers[index]
+            response = answers[best_match]
 
     with st.chat_message("assistant"):
         st.markdown(response)
