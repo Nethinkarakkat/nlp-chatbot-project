@@ -5,7 +5,6 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Download NLTK resources
 nltk.download('punkt')
 nltk.download('wordnet')
 
@@ -25,7 +24,7 @@ questions = [
 answers = [
     "Artificial Intelligence enables machines to simulate human intelligence.",
     "Machine Learning is a subset of AI that allows systems to learn from data.",
-    "Natural Language Processing allows computers to understand human language.",
+    "Natural Language Processing enables computers to understand human language.",
     "A chatbot is a program that simulates conversation with users.",
     "Python was created by Guido van Rossum.",
     "Deep learning is a type of machine learning based on neural networks.",
@@ -40,16 +39,14 @@ def preprocess(text):
 
 processed_questions = [preprocess(q) for q in questions]
 
-# TF-IDF model
 vectorizer = TfidfVectorizer()
 X = vectorizer.fit_transform(processed_questions)
 
-# Streamlit UI
+# UI
 st.title("AI Chatbot")
-
 st.write("You can ask me questions about AI, Machine Learning, NLP, and Data Science.")
 
-# Initialize chat history
+# Chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages.append({
@@ -57,12 +54,11 @@ if "messages" not in st.session_state:
         "content": "Hello! 👋 I'm your AI chatbot. How can I help you today?"
     })
 
-# Show chat history
+# Show conversation
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# User input
 user_input = st.chat_input("Type your message...")
 
 if user_input:
@@ -72,25 +68,46 @@ if user_input:
 
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    user_lower = user_input.lower()
+    text = user_input.lower()
 
-    # Greeting detection
-    if user_lower in ["hi", "hello", "hey"]:
-        response = "Hello! 😊 What would you like to know about AI or Machine Learning?"
+    # Greeting
+    if text in ["hi", "hello", "hey"]:
+        response = "Hello! 😊 Ask me anything about AI, Machine Learning, or NLP."
 
-    elif "thanks" in user_lower or "thank you" in user_lower:
-        response = "You're welcome! Let me know if you have more questions."
+    # AI questions
+    elif "ai" in text or "artificial intelligence" in text:
+        response = "Artificial Intelligence enables machines to simulate human intelligence."
+
+    # Machine learning
+    elif "machine learning" in text or "ml" in text:
+        response = "Machine Learning is a subset of AI that allows systems to learn from data."
+
+    # NLP
+    elif "nlp" in text or "natural language processing" in text:
+        response = "Natural Language Processing enables computers to understand human language."
+
+    # Chatbot
+    elif "chatbot" in text:
+        response = "A chatbot is a program that simulates conversation with users."
+
+    # Python
+    elif "python" in text:
+        response = "Python was created by Guido van Rossum."
+
+    # Thanks
+    elif "thanks" in text or "thank you" in text:
+        response = "You're welcome! 😊"
 
     else:
-        # NLP similarity matching
+        # fallback to similarity
         processed_input = preprocess(user_input)
         user_vector = vectorizer.transform([processed_input])
-        similarity = cosine_similarity(user_vector, X)
 
+        similarity = cosine_similarity(user_vector, X)
         index = np.argmax(similarity)
 
         if similarity[0][index] < 0.25:
-            response = "I'm not sure about that. Try asking about AI, ML, NLP, or Data Science."
+            response = "I'm not sure about that. Try asking about AI, Machine Learning, NLP, or Data Science."
         else:
             response = answers[index]
 
