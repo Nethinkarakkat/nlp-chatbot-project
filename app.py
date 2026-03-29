@@ -18,7 +18,7 @@ knowledge_base = {
     
     "what is deep learning": "Deep learning is a machine learning technique based on neural networks with multiple layers.",
     
-    "what is natural language processing": "Natural Language Processing enables computers to understand human language.",
+    "what is nlp": "Natural Language Processing enables computers to understand human language.",
     "applications of nlp": "NLP is used in chatbots, translation systems, sentiment analysis, and voice assistants.",
     
     "what is data science": "Data science focuses on extracting insights from data using statistics and machine learning.",
