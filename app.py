@@ -5,14 +5,13 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Fix for Streamlit deployment
+# Download required NLTK resources
 nltk.download('punkt')
-nltk.download('punkt_tab')
 nltk.download('wordnet')
 
 lemmatizer = WordNetLemmatizer()
 
-# Knowledge base questions
+# Knowledge base
 questions = [
     "what is artificial intelligence",
     "what is machine learning",
@@ -23,10 +22,9 @@ questions = [
     "what is data science"
 ]
 
-# Corresponding responses
 answers = [
     "Artificial Intelligence enables machines to simulate human intelligence.",
-    "Machine Learning is a subset of AI that allows systems to learn from data.",
+    "Machine Learning allows systems to learn from data.",
     "Natural Language Processing allows computers to understand human language.",
     "A chatbot is a program that simulates conversation with users.",
     "Python was created by Guido van Rossum.",
@@ -42,43 +40,47 @@ def preprocess(text):
 
 processed_questions = [preprocess(q) for q in questions]
 
-# TF-IDF vectorization
+# TF-IDF vectorizer
 vectorizer = TfidfVectorizer()
 X = vectorizer.fit_transform(processed_questions)
 
-# Streamlit UI
-st.title("NLP Chatbot")
-st.write("Ask questions about AI, ML, or Data Science.")
+# Page title
+st.title("AI Chatbot")
+st.write("Ask me questions about AI, Machine Learning, or Data Science.")
 
 # Chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display previous chat
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+# Show previous conversation
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
 # User input
-prompt = st.chat_input("Ask your question")
+user_input = st.chat_input("Type your message...")
 
-if prompt:
+if user_input:
 
-    st.chat_message("user").write(prompt)
+    # Display user message
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-    # Preprocess input
-    user_processed = preprocess(prompt)
+    # Save user message
+    st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # Convert to vector
-    user_vector = vectorizer.transform([user_processed])
+    # Process user input
+    processed_input = preprocess(user_input)
+    user_vector = vectorizer.transform([processed_input])
 
-    # Compute similarity
     similarity = cosine_similarity(user_vector, X)
-
     index = np.argmax(similarity)
 
-    response = answers[index]
+    bot_response = answers[index]
 
-    st.chat_message("assistant").write(response)
+    # Display bot response
+    with st.chat_message("assistant"):
+        st.markdown(bot_response)
 
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    # Save bot response
+    st.session_state.messages.append({"role": "assistant", "content": bot_response})
